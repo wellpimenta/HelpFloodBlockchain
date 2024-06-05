@@ -21,6 +21,17 @@ contract FloodHelp {
 
     function openRequest(string memory title, string memory description, string memory contact, uint goal) public {
         lastId++;
+        bytes memory tempEmptyStringTest = bytes(title); // Uses memory
+        
+        require(getOpenRequestsAuthor(msg.sender), unicode"Já existe um doação aberta para este autor");
+        require(tempEmptyStringTest.length == 0, unicode"Titulo é obrigatório");
+
+        tempEmptyStringTest = bytes(description); 
+        require(tempEmptyStringTest.length == 0, unicode"A descrição é obrigatória");
+
+        tempEmptyStringTest = bytes(contact); 
+        require(tempEmptyStringTest.length == 0, unicode"Contato é obrigatória");
+
         requests[lastId] = Request({
             id: lastId,
             title: title,
@@ -50,11 +61,14 @@ contract FloodHelp {
 
     function donate(uint id) public payable {
         requests[id].balance += msg.value;
+
+        require(requests[id].balance == 0, unicode"O valor da doação não pode ser zero !");
+
         if(requests[id].balance >= requests[id].goal)
             closeRequest(id);
     }
 
-    function getOpenRequests(uint startId, uint quantity) public view returns (Request[] memory){
+    function getOpenRequests(uint startId, uint quantity) public view returns (Request[] memory){              
         Request[] memory result = new Request[](quantity);
         uint id = startId;
         uint count = 0;
@@ -72,4 +86,22 @@ contract FloodHelp {
         return result;
     }
 
+    function getOpenRequestsAuthor(address author) public view returns (bool){
+        uint id = 1;
+        bool result = false;
+
+        do {
+            if(requests[id].open){
+                if(requests[id].author == author)
+                {
+                    result = true;
+                }                 
+            }
+
+            id++;
+        }
+        while(id <= lastId);
+
+        return result;
+    }
 }
